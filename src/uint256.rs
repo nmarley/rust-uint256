@@ -17,6 +17,31 @@ impl Uint256 {
     pub fn set_zero(&mut self) {
         self.0 = [0, 0, 0, 0];
     }
+
+    pub fn from_hex<S: AsRef<str>>(hex_str: S) -> Result<Self, String> {
+        let hex_str = hex_str.as_ref();
+        let hex_str = hex_str.strip_prefix("0x").unwrap_or(hex_str);
+        // let hex_str = hex_str.trim_start_matches('0');
+
+        if hex_str.len() != 64 {
+            return Err("hex string too long".into());
+        }
+
+        let mut result = Self::ZERO;
+        for (i, chunk) in hex_str.as_bytes().rchunks(16).enumerate() {
+            let chunk_str = match std::str::from_utf8(chunk) {
+                Ok(s) => s,
+                Err(_) => return Err("Invalid utf8".into()),
+            };
+            let value = match u64::from_str_radix(chunk_str, 16) {
+                Ok(v) => v,
+                Err(_) => return Err("Invalid hex".into()),
+            };
+            result.0[i] = value;
+        }
+
+        Ok(result)
+    }
 }
 
 impl fmt::Debug for Uint256 {
